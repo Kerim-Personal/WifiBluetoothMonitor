@@ -1,3 +1,4 @@
+// kerim-personal/wifibluetoothmonitor/WifiBluetoothMonitor-ebbe0ba5fb0b05ae271ffbe39273095ba6249a30/app/build.gradle.kts
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
