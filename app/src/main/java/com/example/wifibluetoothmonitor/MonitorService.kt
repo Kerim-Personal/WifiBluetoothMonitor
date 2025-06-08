@@ -17,16 +17,18 @@ import java.util.concurrent.TimeUnit
 
 class MonitorService : Service() {
 
-    private val TAG = "MonitorService"
-    private lateinit var handler: Handler
-    private lateinit var wifiManager: WifiManager
-    private lateinit var bluetoothAdapter: BluetoothAdapter
-    private val checkIntervalMillis = TimeUnit.MINUTES.toMillis(5) // 5 dakika
-
-    companion object {
+    // Kotlin adlandırma kuralına uygun olarak TAG'i companion object içine alıyoruz.
+    private companion object {
+        const val TAG = "MonitorService"
         const val CHANNEL_ID = "MonitorServiceChannel"
         const val NOTIFICATION_ID = 1
     }
+
+    private lateinit var handler: Handler
+    private lateinit var wifiManager: WifiManager
+    private lateinit var bluetoothAdapter: BluetoothAdapter
+    // İzleme aralığını 1 dakikaya ayarlıyoruz
+    private val checkIntervalMillis = TimeUnit.MINUTES.toMillis(1)
 
     override fun onCreate() {
         super.onCreate()
@@ -56,6 +58,7 @@ class MonitorService : Service() {
             .setContentIntent(pendingIntent)
             .build()
 
+        // startForeground çağrısı için AndroidManifest.xml'de foregroundServiceType belirtildiğinden emin olun.
         startForeground(NOTIFICATION_ID, notification)
 
         startMonitoring()
@@ -76,25 +79,33 @@ class MonitorService : Service() {
         Log.d(TAG, "Checking Wi-Fi and Bluetooth status...")
 
         // Wi-Fi Durumunu Kontrol Et ve Kapat (eğer açıksa)
+        // Not: Android 10 (API 29) ve üzeri sürümlerde, uygulamaların doğrudan Wi-Fi'yi açıp kapatması kısıtlanmıştır.
+        // Bu kod, daha eski Android sürümlerinde çalışmaya devam edecektir, ancak yeni sürümlerde etkisiz olabilir veya bir SecurityException'a neden olabilir.
         if (wifiManager.isWifiEnabled) {
-            // Burada Wi-Fi kullanım süresini kontrol etmeniz gerekir.
-            // Bu kısım için şimdilik doğrudan kapatma örneği gösteriyorum.
-            // Gerçek uygulamada, en son kullanıldığı zamanı depolayıp karşılaştırmalısınız.
             Log.d(TAG, "Wi-Fi açık, kapatılıyor...")
-            wifiManager.isWifiEnabled = false
-            showToast("Wi-Fi kapatıldı.")
+            try {
+                wifiManager.isWifiEnabled = false
+                showToast("Wi-Fi kapatıldı.")
+            } catch (e: SecurityException) {
+                Log.e(TAG, "Wi-Fi kapatma izni reddedildi veya API kısıtlaması: ${e.message}")
+                showToast("Wi-Fi'yi kapatmak için izin gerekli veya kısıtlı.")
+            }
         } else {
             Log.d(TAG, "Wi-Fi zaten kapalı.")
         }
 
         // Bluetooth Durumunu Kontrol Et ve Kapat (eğer açıksa)
+        // Not: Android 12 (API 31) ve üzeri sürümlerde, uygulamaların doğrudan Bluetooth'u açıp kapatması kısıtlanmıştır.
+        // Bu kod, daha eski Android sürümlerinde çalışmaya devam edecektir, ancak yeni sürümlerde etkisiz olabilir veya bir SecurityException'a neden olabilir.
         if (bluetoothAdapter.isEnabled) {
-            // Burada Bluetooth kullanım süresini kontrol etmeniz gerekir.
-            // Bu kısım için şimdilik doğrudan kapatma örneği gösteriyorum.
-            // Gerçek uygulamada, en son kullanıldığı zamanı depolayıp karşılaştırmalısınız.
             Log.d(TAG, "Bluetooth açık, kapatılıyor...")
-            bluetoothAdapter.disable()
-            showToast("Bluetooth kapatıldı.")
+            try {
+                bluetoothAdapter.disable()
+                showToast("Bluetooth kapatıldı.")
+            } catch (e: SecurityException) {
+                Log.e(TAG, "Bluetooth kapatma izni reddedildi veya API kısıtlaması: ${e.message}")
+                showToast("Bluetooth'u kapatmak için izin gerekli veya kısıtlı.")
+            }
         } else {
             Log.d(TAG, "Bluetooth zaten kapalı.")
         }
@@ -115,7 +126,7 @@ class MonitorService : Service() {
     private fun showToast(message: String) {
         // Toast mesajlarını ana iş parçacığında göstermek için Handler kullanın
         Handler(Looper.getMainLooper()).post {
-            //Toast.makeText(applicationContext, message, Toast.LENGTH_SHORT).show()
+            // Toast.makeText(applicationContext, message, Toast.LENGTH_SHORT).show()
             Log.d(TAG, "Toast: $message") // Servis içinden doğrudan Toast göstermek zor olabilir, Log kullanın.
         }
     }
